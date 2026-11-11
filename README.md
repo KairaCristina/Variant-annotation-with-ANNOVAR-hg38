@@ -1,5 +1,6 @@
 # Variant-annotation-with-ANNOVAR-hg38
-Same steps as the anotando_annovar.ipynb notebook (hg19) in github.com/KairaCristina/annotating-with-ANNOVAR-using-the-human-genome-Hg19, with the build switched to hg38 and databases replaced by their hg38 counterpart when the original version does not exist for that build.
+
+Same steps as the `anotando_annovar.ipynb` notebook (hg19) in [annotating-with-ANNOVAR-using-the-human-genome-Hg19](https://github.com/KairaCristina/annotating-with-ANNOVAR-using-the-human-genome-Hg19), with the build switched to **hg38** and databases replaced by their hg38 counterpart when the original version does not exist for that build.
 
 | hg19 database | hg38 database | Reason |
 |---|---|---|
@@ -11,44 +12,63 @@ Same steps as the anotando_annovar.ipynb notebook (hg19) in github.com/KairaCris
 
 ---
 
-## 0. Set the paths once
+## 1. Create the conda environment
+
+ANNOVAR is a set of Perl scripts. Database downloads (`-downdb`) use `wget` and `gunzip`.
+
+```bash
+conda create -n annovar_hg38 -c conda-forge -c bioconda --strict-channel-priority perl wget gzip
+conda activate annovar_hg38
+
+# Check the tools
+perl -v | head -n 2
+wget --version | head -n 1
+gunzip --version | head -n 1
+```
+
+## 2. Set the paths once
 
 Run this block in every new terminal session. All later commands use these variables, so they work from any folder.
 
 ```bash
-BASE_DIR=/home/users/kcptomaz/ANNOVAR         # folder that holds annovar/, humandb_hg38/ and the input files
-ANNOVAR_DIR=$BASE_DIR/annovar                 # ANNOVAR scripts
-DB_HG38=$BASE_DIR/humandb_hg38                # existing hg38 databases (already ~180 GB)
+BASE_DIR=/home/users/kcptomaz/ANNOVAR         # working folder (change to your own path)
+ANNOVAR_DIR=$BASE_DIR/annovar                 # ANNOVAR scripts (created in step 3)
+DB_HG38=$BASE_DIR/humandb_hg38                # hg38 databases (downloaded in step 4)
+IN_DIR=$BASE_DIR/input
 OUT_DIR=$BASE_DIR/output_hg38
 LOG_DIR=$BASE_DIR/logs
 
-mkdir -p $OUT_DIR $LOG_DIR
+mkdir -p $BASE_DIR $DB_HG38 $IN_DIR $OUT_DIR $LOG_DIR
 cd $BASE_DIR
-
-# Check
-ls $ANNOVAR_DIR/table_annovar.pl
-ls $DB_HG38
 ```
 
 > Every command below uses **absolute paths** through these variables. Mixing absolute and relative `humandb` paths is the usual cause of `database file does not exist` errors.
 
-## 1. Extract ANNOVAR
+## 3. Install ANNOVAR
+
+ANNOVAR requires a free registration: <https://www.openbioinformatics.org/annovar/annovar_download_form.php>. Download `annovar.latest.tar.gz` from the link sent by email and place it in `$BASE_DIR`.
 
 ```bash
 tar -xvf $BASE_DIR/annovar.latest.tar.gz -C $BASE_DIR
-ls $ANNOVAR_DIR       # must list annotate_variation.pl, table_annovar.pl, ...
+
+# Must list annotate_variation.pl, table_annovar.pl, convert2annovar.pl, ...
+ls $ANNOVAR_DIR
 ```
 
-## 2. Download the hg38 databases
+## 4. Download the hg38 databases
+
+> Check free disk space first with `df -h $BASE_DIR`. `dbnsfp42a` alone takes ~45 GB once uncompressed, and `gnomad_genome` and `dbnsfp30a` are also tens of GB.
 
 ```bash
 # Gene models
 perl $ANNOVAR_DIR/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar refGene $DB_HG38/
 
-# Filter-based databases (progress messages go to the .err files)
+# Filter-based databases (skips databases already present; progress messages go to the .err files)
 for db in exac03 avsnp150 dbnsfp30a dbnsfp31a_interpro dbnsfp42a \
           clinvar_20140702 clinvar_20221231 gnomad211_exome gnomad_genome \
           intervar_20180118 revel; do
+    if [[ -s $DB_HG38/hg38_${db}.txt ]]; then echo "${db}: present - skipping"; continue; fi
+    echo "${db}: downloading"
     perl $ANNOVAR_DIR/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar ${db} $DB_HG38/ \
         1> $LOG_DIR/${db}_download.log 2> $LOG_DIR/${db}_download.err
 done
@@ -58,82 +78,112 @@ grep -L "Finished downloading" $LOG_DIR/*_download.err
 ls -lh $DB_HG38
 ```
 
-> `dbnsfp42a`, `gnomad_genome` and `dbnsfp30a` are large (tens of GB each). Check free disk space first with `df -h $BASE_DIR`.
+> The downloads take hours. On a remote server, run the loop inside `tmux`/`screen`, or wrap it in `nohup bash -c '...' &`, so it does not stop if the connection drops. Do **not** start the same download twice: both processes write to the same file and corrupt it.
 >
 > The UniProt step of the original notebook was removed: the UCSC `uniprot` table is no longer available for download. Protein domains come from `dbnsfp31a_interpro`.
 
-## 3. Check the input files
+To list every database available for a build (name, date, size), straight from the ANNOVAR server:
+
+```bash
+perl $ANNOVAR_DIR/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar avdblist $DB_HG38/
+less $DB_HG38/hg38_avdblist.txt
+```
+
+## 5. Input file
+
+This repository provides an example VCF, [`variants.vcf`](variants.vcf), with nine well-known variants in hg38 coordinates (type 2 diabetes GWAS hits, *APOE* ε4/ε2, *HFE* C282Y, *MTHFR* C677T). Copy it into the input folder, or replace it with your own hg38 VCF to annotate real data.
+
+```bash
+cp /path/to/this/repository/variants.vcf $IN_DIR/
+
+# Check the file: header lines start with '#', data lines have >= 8 tab-separated columns
+cat $IN_DIR/variants.vcf
+```
 
 ANNOVAR accepts two input formats, and `-vcfinput` must be used **only** with VCF:
 
 | Format | Example line | Flag |
 |---|---|---|
-| ANNOVAR avinput | `1  120378678  120378678  C  T` | *(no flag)* |
+| ANNOVAR avinput | `chr1  11796321  11796321  G  A` | *(no flag)* |
 | VCF | standard VCF, ≥ 8 columns, header lines starting with `#` | `-vcfinput` |
 
-```bash
-# First data line of each input: 5 columns = avinput, >= 8 columns = VCF
-for f in variantes.txt novo.txt variants_estrelas.txt variantes.vcf; do
-    echo "== $f"; grep -v '^#' $BASE_DIR/$f | head -n 1
-done
-```
-## 4. Annotation — `variantes.vcf` 
+## 6. Annotation — `variants.vcf`
 
 ```bash
-perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variants.vcf $DB_HG38/ \
+perl $ANNOVAR_DIR/table_annovar.pl $IN_DIR/variants.vcf $DB_HG38/ \
     -buildver hg38 \
-    -out $OUT_DIR/ \
+    -out $OUT_DIR/variants_vcf \
     -remove \
-    -protocol refGene,clinvar_20140702,clinvar_20221231,dbnsfp42a,dbnsfp42c,dbnsfp30a,intervar_20180118,exac03,gnomad211_exome,avsnp150,revel,gnomad_genome,dbnsfp31a_interpro \
-    -operation g,f,f,f,f,f,f,f,f,f,f,f,f,f \
+    -protocol refGene,clinvar_20140702,clinvar_20221231,dbnsfp42a,dbnsfp30a,dbnsfp31a_interpro,intervar_20180118,exac03,gnomad211_exome,avsnp150,revel,gnomad_genome \
+    -operation g,f,f,f,f,f,f,f,f,f,f,f \
     -nastring . \
     --dot2underline \
     -vcfinput \
-    1> $LOG_DIR/variants_last_gwas_diabetes.log 2> $LOG_DIR/variants_last_gwas_diabetes.err
-```
-### Extra: Convert file .vcf to .txt format
-```
-cd /home/users/kcptomaz/ANNOVAR
-
-perl $ANNOVAR_DIR/convert2annovar.pl -format vcf4old $BASE_DIR/variantes.vcf \
-    -outfile $BASE_DIR/variants.txt \
-    2> $LOG_DIR/convert_variants.err
-
-cat $BASE_DIR/variants.txt
+    1> $LOG_DIR/variants_vcf.log 2> $LOG_DIR/variants_vcf.err
 ```
 
-## 4. Annotation — `variants.txt`
+Outputs in `$OUT_DIR`:
+
+| File | Content |
+|---|---|
+| `variants_vcf.hg38_multianno.txt` | Annotated table (one row per variant); the `Otherinfo*` columns hold the original VCF line, including genotypes |
+| `variants_vcf.hg38_multianno.vcf` | Input VCF with all annotations added to the INFO column |
+| `variants_vcf.avinput` | Intermediate file: the VCF converted to ANNOVAR input format |
+
+> The number of databases in `-protocol` must equal the number of entries in `-operation` (`g` for gene-based, `f` for filter-based). Here: 12 and 12.
+
+## 7. Convert the VCF to ANNOVAR input format (`.txt`)
 
 ```bash
-perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variants.txt $DB_HG38/ \
+perl $ANNOVAR_DIR/convert2annovar.pl -format vcf4old $IN_DIR/variants.vcf \
+    -outfile $IN_DIR/variants.txt \
+    2> $LOG_DIR/convert_variants.err
+
+cat $IN_DIR/variants.txt
+```
+
+## 8. Annotation — `variants.txt`
+
+Same databases, **without** `-vcfinput`, because the input is now in ANNOVAR format.
+
+```bash
+perl $ANNOVAR_DIR/table_annovar.pl $IN_DIR/variants.txt $DB_HG38/ \
     -buildver hg38 \
-    -out $OUT_DIR/ \
+    -out $OUT_DIR/variants_txt \
     -remove \
-    -protocol refGene,clinvar_20140702,clinvar_20221231,dbnsfp42a,dbnsfp42c,dbnsfp30a,intervar_20180118,exac03,gnomad211_exome,avsnp150,revel,gnomad_genome,dbnsfp31a_interpro \
-    -operation g,f,f,f,f,f,f,f,f,f,f,f,f,f \
+    -protocol refGene,clinvar_20140702,clinvar_20221231,dbnsfp42a,dbnsfp30a,dbnsfp31a_interpro,intervar_20180118,exac03,gnomad211_exome,avsnp150,revel,gnomad_genome \
+    -operation g,f,f,f,f,f,f,f,f,f,f,f \
     -nastring . \
     --dot2underline \
-    1> $LOG_DIR/novo.log 2> $LOG_DIR/novo.err
+    1> $LOG_DIR/variants_txt.log 2> $LOG_DIR/variants_txt.err
 ```
+
+Output: `variants_txt.hg38_multianno.txt` (same annotation columns as step 6, without genotypes or `Otherinfo` columns).
+
 ## 9. Check the results
 
 ```bash
 ls -lh $OUT_DIR
 
-# Errors or warnings of any run
-grep -iE "error|warning" $LOG_DIR/*.err | grep -v "_download.err"
+# Errors or warnings of the annotation runs
+grep -iE "error|warning" $LOG_DIR/variants_*.err
 
-# Region distribution of one result (column 6 = Func_refGene)
-cut -f6 $OUT_DIR/novo.hg38_multianno.txt | sort | uniq -c | sort -rn
+# Main columns of the result
+awk -F'\t' 'NR==1{for(i=1;i<=NF;i++) h[$i]=i}
+            {print $1, $2, $h["Gene_refGene"], $h["ExonicFunc_refGene"], $h["avsnp150"], $h["CLNSIG"]}' \
+    OFS='\t' $OUT_DIR/variants_vcf.hg38_multianno.txt
 ```
+
+Expected for the example VCF: each `avsnp150` rsID matches the `ID` column of the input; *TCF7L2* (rs7903146) and *FTO* (rs9939609) are intronic (`.` in `ExonicFunc_refGene`); the other seven are `nonsynonymous SNV`; *HFE* rs1800562 is `Pathogenic` in ClinVar.
 
 ---
 
-### Notes
+## Notes
 
-- **`-vcfinput`** is used only in step 8 (`variantes.vcf`). The `.txt` inputs are in ANNOVAR avinput format; using `-vcfinput` on them fails with `invalid record found in VCF4 file (at least 8 tab-delimited fields expected)`. If step 3 shows that a `.txt` file is actually a VCF, add `-vcfinput` to its command.
-- **`WRONG reference alleles` warning:** the input coordinates are not hg38. Check the build of the file before interpreting results.
+- **`-vcfinput`** is used only with VCF input (step 6). Using it on an ANNOVAR-format `.txt` file fails with `invalid record found in VCF4 file (at least 8 tab-delimited fields expected)`.
+- **`WRONG reference alleles` warning:** the input coordinates are not hg38. Check the build of the file before interpreting the results.
 - **Logs:** ANNOVAR writes its progress messages (`NOTICE`) to stderr, so read the `.err` files.
-- **Output files:** named `<prefix>.hg38_multianno.txt` in `$OUT_DIR`, so they do not overwrite the previous hg19 results.
-- **Redundant databases:** steps 6 and 8 keep both ClinVar versions (2014 and 2022) and both dbNSFP versions (3.0a and 4.2a), as in the original notebook. REVEL is already included in `dbnsfp42a`.
-- https://annovar.openbioinformatics.org/en/latest/user-guide/download/
+- **Output names:** always give `-out` a file prefix (e.g. `$OUT_DIR/variants_vcf`), not only a folder; otherwise the outputs become hidden files and each run overwrites the previous one.
+- **Redundant databases:** steps 6 and 8 keep both ClinVar versions (2014 and 2022) and both dbNSFP versions (3.0a and 4.2a), as in the original notebook. REVEL is already included in `dbnsfp42a`. `dbnsfp42c` is the commercial-use version of `dbnsfp42a` and is not needed for academic work.
+- **Newer versions** are available for hg38 (`clinvar_20240917`, `avsnp151`, `gnomad40_genome`, `dbnsfp47a_interpro`); swap them into `-protocol` and the download loop if exact reproduction of the hg19 notebook is not required.
+- Database list and descriptions: <https://annovar.openbioinformatics.org/en/latest/user-guide/download/>
