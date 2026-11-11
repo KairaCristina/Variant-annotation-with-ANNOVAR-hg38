@@ -106,6 +106,18 @@ perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variantes.vcf $DB_HG38/ \
     -vcfinput \
     1> $LOG_DIR/variants_last_gwas_diabetes.log 2> $LOG_DIR/variants_last_gwas_diabetes.err
 ```
+```
+perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variantes.vcf $DB_HG38/ \
+    -buildver hg38 \
+    -out $OUT_DIR/variants_example \
+    -remove \
+    -protocol refGene,clinvar_20240917,dbnsfp42a,dbnsfp31a_interpro,exac03,avsnp151,gnomad211_exome,gnomad40_genome,intervar_20180118 \
+    -operation g,f,f,f,f,f,f,f,f \
+    -nastring . \
+    --dot2underline \
+    -vcfinput \
+    1> $LOG_DIR/variants_example.log 2> $LOG_DIR/variants_example.err
+```
 
 ## 9. Check the results
 
