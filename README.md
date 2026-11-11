@@ -81,12 +81,6 @@ ls -lh $DB_HG38
 >
 > The UniProt step of the original notebook was removed: the UCSC `uniprot` table is no longer available for download. Protein domains come from `dbnsfp31a_interpro`.
 
-To list every database available for a build (name, date, size), straight from the ANNOVAR server:
-
-```bash
-perl $ANNOVAR_DIR/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar avdblist $DB_HG38/
-less $DB_HG38/hg38_avdblist.txt
-```
 
 ## 5. Input file
 
