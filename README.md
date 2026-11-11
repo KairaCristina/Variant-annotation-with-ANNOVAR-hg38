@@ -161,3 +161,4 @@ cut -f6 $OUT_DIR/novo.hg38_multianno.txt | sort | uniq -c | sort -rn
 - **Logs:** ANNOVAR writes its progress messages (`NOTICE`) to stderr, so read the `.err` files.
 - **Output files:** named `<prefix>.hg38_multianno.txt` in `$OUT_DIR`, so they do not overwrite the previous hg19 results.
 - **Redundant databases:** steps 6 and 8 keep both ClinVar versions (2014 and 2022) and both dbNSFP versions (3.0a and 4.2a), as in the original notebook. REVEL is already included in `dbnsfp42a`.
+- https://annovar.openbioinformatics.org/en/latest/user-guide/download/
