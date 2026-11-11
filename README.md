@@ -84,21 +84,24 @@ ls -lh $DB_HG38
 
 ## 5. Input file
 
-This repository provides an example VCF, [`variants.vcf`](variants.vcf), with nine well-known variants in hg38 coordinates. Copy it into the input folder, or replace it with your own hg38 VCF to annotate real data.
+Create an example VCF with nine well-known variants in hg38 coordinates. Or replace it with your own hg38 VCF to annotate real data.
 
 ```bash
-cp /path/to/this/repository/variants.vcf $IN_DIR/
-
-# Check the file: header lines start with '#', data lines have >= 8 tab-separated columns
-cat $IN_DIR/variants.vcf
+cat << 'EOF' | tr -s ' ' '\t' > $IN_DIR/variants.vcf
+##fileformat=VCFv4.2
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM POS ID REF ALT QUAL FILTER INFO FORMAT SAMPLE1
+chr10 112998590 rs7903146 C T . PASS . GT 0/1
+chr19 44908684 rs429358 T C . PASS . GT 0/1
+chr19 44908822 rs7412 C T . PASS . GT 0/1
+chr16 53786615 rs9939609 T A . PASS . GT 0/1
+chr3 12351626 rs1801282 C G . PASS . GT 0/1
+chr8 117172544 rs13266634 C T . PASS . GT 0/1
+chr6 26092913 rs1800562 G A . PASS . GT 0/1
+chr1 11796321 rs1801133 G A . PASS . GT 0/1
+chr11 17388025 rs5219 T C . PASS . GT 0/1
+EOF
 ```
-
-ANNOVAR accepts two input formats, and `-vcfinput` must be used **only** with VCF:
-
-| Format | Example line | Flag |
-|---|---|---|
-| ANNOVAR avinput | `chr1  11796321  11796321  G  A` | *(no flag)* |
-| VCF | standard VCF, ≥ 8 columns, header lines starting with `#` | `-vcfinput` |
 
 ## 6. Annotation — `variants.vcf`
 
