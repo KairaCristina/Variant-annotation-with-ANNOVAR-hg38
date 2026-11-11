@@ -78,35 +78,7 @@ for f in variantes.txt novo.txt variants_estrelas.txt variantes.vcf; do
 done
 ```
 
-## 4. Annotation — `variantes.txt` (refGene, ClinVar, dbNSFP)
-
-```bash
-perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variantes.txt $DB_HG38/ \
-    -buildver hg38 \
-    -out $OUT_DIR/variantes_results \
-    -remove \
-    -protocol refGene,clinvar_20140702,dbnsfp42a \
-    -operation g,f,f \
-    -nastring . \
-    --dot2underline \
-    1> $LOG_DIR/variantes_results.log 2> $LOG_DIR/variantes_results.err
-```
-
-## 5. Annotation — `variantes.txt` (gnomAD, ClinVar, InterPro)
-
-```bash
-perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variantes.txt $DB_HG38/ \
-    -buildver hg38 \
-    -out $OUT_DIR/variantes_gnomad_interpro \
-    -remove \
-    -protocol refGene,gnomad211_exome,clinvar_20221231,dbnsfp31a_interpro,gnomad_genome \
-    -operation g,f,f,f,f \
-    -nastring . \
-    --dot2underline \
-    1> $LOG_DIR/variantes_gnomad_interpro.log 2> $LOG_DIR/variantes_gnomad_interpro.err
-```
-
-## 6. Annotation — `novo.txt` (all databases)
+##  Annotation — `novo.txt` (all databases)
 
 ```bash
 perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/novo.txt $DB_HG38/ \
@@ -120,21 +92,7 @@ perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/novo.txt $DB_HG38/ \
     1> $LOG_DIR/novo.log 2> $LOG_DIR/novo.err
 ```
 
-## 7. Annotation — `variants_estrelas.txt`
-
-```bash
-perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variants_estrelas.txt $DB_HG38/ \
-    -buildver hg38 \
-    -out $OUT_DIR/star_variants \
-    -remove \
-    -protocol refGene,gnomad211_exome,dbnsfp42a \
-    -operation g,f,f \
-    -nastring . \
-    --dot2underline \
-    1> $LOG_DIR/star_variants.log 2> $LOG_DIR/star_variants.err
-```
-
-## 8. Annotation — `variantes.vcf` (diabetes GWAS, all databases)
+## 8. Annotation — `variantes.vcf` 
 
 ```bash
 perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variantes.vcf $DB_HG38/ \
