@@ -16,14 +16,18 @@ Same steps as the anotando_annovar.ipynb notebook (hg19) in github.com/KairaCris
 Run this block in every new terminal session. All later commands use these variables, so they work from any folder.
 
 ```bash
-BASE_DIR=/home/users/kcptomaz/ANNOVAR/annovar          # folder that holds annovar.latest.tar.gz and the input files
-ANNOVAR_DIR=$BASE_DIR/annovar                 # ANNOVAR scripts (created in step 1)
-DB_HG38=$BASE_DIR/humandb_hg38                # all hg38 databases go here
+BASE_DIR=/home/users/kcptomaz/ANNOVAR         # folder that holds annovar/, humandb_hg38/ and the input files
+ANNOVAR_DIR=$BASE_DIR/annovar                 # ANNOVAR scripts
+DB_HG38=$BASE_DIR/humandb_hg38                # existing hg38 databases (already ~180 GB)
 OUT_DIR=$BASE_DIR/output_hg38
 LOG_DIR=$BASE_DIR/logs
 
-mkdir -p $DB_HG38 $OUT_DIR $LOG_DIR
+mkdir -p $OUT_DIR $LOG_DIR
 cd $BASE_DIR
+
+# Check
+ls $ANNOVAR_DIR/table_annovar.pl
+ls $DB_HG38
 ```
 
 > Every command below uses **absolute paths** through these variables. Mixing absolute and relative `humandb` paths is the usual cause of `database file does not exist` errors.
