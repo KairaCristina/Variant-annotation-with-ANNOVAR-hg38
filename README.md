@@ -16,7 +16,7 @@ Same steps as the anotando_annovar.ipynb notebook (hg19) in github.com/KairaCris
 Run this block in every new terminal session. All later commands use these variables, so they work from any folder.
 
 ```bash
-BASE_DIR=/home/kaira/Desktop/annovar          # folder that holds annovar.latest.tar.gz and the input files
+BASE_DIR=/home/users/kcptomaz/ANNOVAR/annovar          # folder that holds annovar.latest.tar.gz and the input files
 ANNOVAR_DIR=$BASE_DIR/annovar                 # ANNOVAR scripts (created in step 1)
 DB_HG38=$BASE_DIR/humandb_hg38                # all hg38 databases go here
 OUT_DIR=$BASE_DIR/output_hg38
