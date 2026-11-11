@@ -20,10 +20,6 @@ ANNOVAR is a set of Perl scripts. Database downloads (`-downdb`) use `wget` and 
 conda create -n annovar_hg38 -c conda-forge -c bioconda --strict-channel-priority perl wget gzip
 conda activate annovar_hg38
 
-# Check the tools
-perl -v | head -n 2
-wget --version | head -n 1
-gunzip --version | head -n 1
 ```
 
 ## 2. Set the paths once
