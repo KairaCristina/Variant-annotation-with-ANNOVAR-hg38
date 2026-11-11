@@ -3,156 +3,166 @@ Same steps as the anotando_annovar.ipynb notebook (hg19) in github.com/KairaCris
 
 | hg19 database | hg38 database | Reason |
 |---|---|---|
-| `clinvar_20140211` | `clinvar_20140702` | `clinvar_20140211` is hg19-only; `20140702` is the oldest version available for hg38 |
+| `clinvar_20140211` | `clinvar_20140702` | `clinvar_20140211` is hg19-only |
 | `intervar_20170202` | `intervar_20180118` | `intervar_20170202` is hg19-only |
-| `refGene`, `exac03`, `avsnp150`, `dbnsfp30a`, `dbnsfp31a_interpro`, `dbnsfp42a`, `clinvar_20221231`, `gnomad211_exome`, `gnomad_genome`, `revel` | unchanged | already available for hg38 |
+| `refGene`, `exac03`, `avsnp150`, `dbnsfp30a`, `dbnsfp31a_interpro`, `dbnsfp42a`, `clinvar_20221231`, `gnomad211_exome`, `gnomad_genome`, `revel` | unchanged | available for hg38 |
 
-> The input files (`variantes.txt`, `novo.txt`, `variants_estrelas.txt`, `variantes.vcf`) must be in **hg38/GRCh38** coordinates. If they are in hg19, lift them over first (e.g. CrossMap or Picard LiftoverVcf).
+> The input files must be in **hg38/GRCh38** coordinates. If they are in hg19, lift them over first (e.g. CrossMap or Picard LiftoverVcf).
 
 ---
+
+## 0. Set the paths once
+
+Run this block in every new terminal session. All later commands use these variables, so they work from any folder.
+
+```bash
+BASE_DIR=/home/kaira/Desktop/annovar          # folder that holds annovar.latest.tar.gz and the input files
+ANNOVAR_DIR=$BASE_DIR/annovar                 # ANNOVAR scripts (created in step 1)
+DB_HG38=$BASE_DIR/humandb_hg38                # all hg38 databases go here
+OUT_DIR=$BASE_DIR/output_hg38
+LOG_DIR=$BASE_DIR/logs
+
+mkdir -p $DB_HG38 $OUT_DIR $LOG_DIR
+cd $BASE_DIR
+```
+
+> Every command below uses **absolute paths** through these variables. Mixing absolute and relative `humandb` paths is the usual cause of `database file does not exist` errors.
 
 ## 1. Extract ANNOVAR
 
 ```bash
-tar -xvf /home/kaira/Desktop/annovar/annovar.latest.tar.gz
+tar -xvf $BASE_DIR/annovar.latest.tar.gz -C $BASE_DIR
+ls $ANNOVAR_DIR       # must list annotate_variation.pl, table_annovar.pl, ...
 ```
 
 ## 2. Download the hg38 databases
 
 ```bash
-perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar refGene humandb/
+# Gene models
+perl $ANNOVAR_DIR/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar refGene $DB_HG38/
+
+# Filter-based databases (progress messages go to the .err files)
+for db in exac03 avsnp150 dbnsfp30a dbnsfp31a_interpro dbnsfp42a \
+          clinvar_20140702 clinvar_20221231 gnomad211_exome gnomad_genome \
+          intervar_20180118 revel; do
+    perl $ANNOVAR_DIR/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar ${db} $DB_HG38/ \
+        1> $LOG_DIR/${db}_download.log 2> $LOG_DIR/${db}_download.err
+done
+
+# Empty output = all downloads finished successfully
+grep -L "Finished downloading" $LOG_DIR/*_download.err
+ls -lh $DB_HG38
 ```
 
-## 3. Download the remaining databases (hg38)
+> `dbnsfp42a`, `gnomad_genome` and `dbnsfp30a` are large (tens of GB each). Check free disk space first with `df -h $BASE_DIR`.
+>
+> The UniProt step of the original notebook was removed: the UCSC `uniprot` table is no longer available for download. Protein domains come from `dbnsfp31a_interpro`.
+
+## 3. Check the input files
+
+ANNOVAR accepts two input formats, and `-vcfinput` must be used **only** with VCF:
+
+| Format | Example line | Flag |
+|---|---|---|
+| ANNOVAR avinput | `1  120378678  120378678  C  T` | *(no flag)* |
+| VCF | standard VCF, ≥ 8 columns, header lines starting with `#` | `-vcfinput` |
 
 ```bash
-# hg38 - exac03
-# perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar exac03 humandb/
-
-# hg38 - avsnp150
-# perl annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar avsnp150 annovar/humandb/ \
-# 1>logs/avsnp150_down.txt 2>logs/avsnp150_down_errors.txt
-# perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar avsnp150 humandb/
-
-# hg38 - dbnsfp30a
-# perl annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar dbnsfp30a annovar/humandb/ \
-# 1>logs/dbnsfp30a_down.txt 2>logs/dbnsfp30a_down_errors.txt
-# perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar dbnsfp30a humandb/
-
-# hg38 - clinvar_20221231
-# perl annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar clinvar_20221231 annovar/humandb/ \
-# 1>logs/clinvar_20221231_down.txt 2>logs/clinvar_20221231_down_errors.txt
-# perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar clinvar_20221231 humandb/
-
-# hg38 - gnomad211_exome
-# perl annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar gnomad211_exome annovar/humandb/ \
-# 1>logs/gnomad211_exome_down.txt 2>logs/gnomad211_exome_down_errors.txt
-# perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar gnomad211_exome humandb/
-
-# hg38 - intervar_20180118 (intervar_20170202 is hg19-only)
-# perl annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar intervar_20180118 annovar/humandb/ \
-# 1>logs/intervar_20180118_down.txt 2>logs/intervar_20180118_down_errors.txt
-perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar intervar_20180118 humandb/
-
-# hg38 - revel
-# perl annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar revel annovar/humandb/ \
-# 1>logs/revel_down.txt 2>logs/revel_down_errors.txt
-# perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar revel humandb/
+# First data line of each input: 5 columns = avinput, >= 8 columns = VCF
+for f in variantes.txt novo.txt variants_estrelas.txt variantes.vcf; do
+    echo "== $f"; grep -v '^#' $BASE_DIR/$f | head -n 1
+done
 ```
 
-## 4. ClinVar (older version)
+## 4. Annotation — `variantes.txt` (refGene, ClinVar, dbNSFP)
 
 ```bash
-# clinvar_20140211 is hg19-only; clinvar_20140702 is the oldest version available for hg38
-perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar clinvar_20140702 humandb/
-```
-
-## 5. dbNSFP 4.2a
-
-```bash
-# run again
-perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar dbnsfp42a humandb/
-```
-
-## 6. UniProt (UCSC)
-
-```bash
-perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb uniprot humandb/
-```
-
-## 7. gnomAD genome
-
-```bash
-perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar gnomad_genome humandb/
-```
-
-## 8. Annotation — `variantes.txt` (refGene, ClinVar, dbNSFP)
-
-```bash
-perl /home/kaira/Desktop/annovar/annovar/table_annovar.pl variantes.txt /home/kaira/Desktop/annovar/humandb -buildver hg38 -out results \
--protocol refGene,clinvar_20140702,dbnsfp42a -operation g,f,f -nastring . -vcfinput
-```
-
-## 9. Annotation — `variantes.txt` (gnomAD, ClinVar, InterPro)
-
-```bash
-perl /home/kaira/Desktop/annovar/annovar/table_annovar.pl variantes.txt humandb/ \
+perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variantes.txt $DB_HG38/ \
     -buildver hg38 \
-    -out file.avinput \
+    -out $OUT_DIR/variantes_results \
+    -remove \
+    -protocol refGene,clinvar_20140702,dbnsfp42a \
+    -operation g,f,f \
+    -nastring . \
+    --dot2underline \
+    1> $LOG_DIR/variantes_results.log 2> $LOG_DIR/variantes_results.err
+```
+
+## 5. Annotation — `variantes.txt` (gnomAD, ClinVar, InterPro)
+
+```bash
+perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variantes.txt $DB_HG38/ \
+    -buildver hg38 \
+    -out $OUT_DIR/variantes_gnomad_interpro \
     -remove \
     -protocol refGene,gnomad211_exome,clinvar_20221231,dbnsfp31a_interpro,gnomad_genome \
     -operation g,f,f,f,f \
-    -nastring "." \
-    -vcfinput \
-    --dot2underline
+    -nastring . \
+    --dot2underline \
+    1> $LOG_DIR/variantes_gnomad_interpro.log 2> $LOG_DIR/variantes_gnomad_interpro.err
 ```
 
-## 10. Annotation — `novo.txt` (all databases)
+## 6. Annotation — `novo.txt` (all databases)
 
 ```bash
-perl /home/kaira/Desktop/annovar/annovar/table_annovar.pl /home/kaira/Desktop/annovar/novo.txt humandb/ \
+perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/novo.txt $DB_HG38/ \
     -buildver hg38 \
-    -out new \
+    -out $OUT_DIR/novo \
     -remove \
     -protocol refGene,clinvar_20140702,dbnsfp42a,exac03,avsnp150,dbnsfp30a,clinvar_20221231,gnomad211_exome,intervar_20180118,revel,gnomad_genome \
     -operation g,f,f,f,f,f,f,f,f,f,f \
-    -nastring "." \
-    --dot2underline
+    -nastring . \
+    --dot2underline \
+    1> $LOG_DIR/novo.log 2> $LOG_DIR/novo.err
 ```
 
-## 11. Annotation — `variants_estrelas.txt`
+## 7. Annotation — `variants_estrelas.txt`
 
 ```bash
-perl /home/kaira/Desktop/annovar/annovar/table_annovar.pl /home/kaira/Desktop/annovar/variants_estrelas.txt humandb/ \
+perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variants_estrelas.txt $DB_HG38/ \
     -buildver hg38 \
-    -out star_variants \
+    -out $OUT_DIR/star_variants \
     -remove \
     -protocol refGene,gnomad211_exome,dbnsfp42a \
     -operation g,f,f \
-    -nastring "." \
-    --dot2underline
+    -nastring . \
+    --dot2underline \
+    1> $LOG_DIR/star_variants.log 2> $LOG_DIR/star_variants.err
 ```
 
-## 12. Annotation — `variantes.vcf` (diabetes GWAS, all databases)
+## 8. Annotation — `variantes.vcf` (diabetes GWAS, all databases)
 
 ```bash
-perl /home/kaira/Desktop/annovar/annovar/table_annovar.pl /home/kaira/Desktop/annovar/variantes.vcf humandb/ \
+perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variantes.vcf $DB_HG38/ \
     -buildver hg38 \
-    -out variants_last_gwas_diabetes \
+    -out $OUT_DIR/variants_last_gwas_diabetes \
     -remove \
     -protocol refGene,clinvar_20140702,dbnsfp42a,exac03,avsnp150,dbnsfp30a,clinvar_20221231,gnomad211_exome,intervar_20180118,revel,gnomad_genome \
     -operation g,f,f,f,f,f,f,f,f,f,f \
-    -nastring "." \
+    -nastring . \
     --dot2underline \
-    -vcfinput
+    -vcfinput \
+    1> $LOG_DIR/variants_last_gwas_diabetes.log 2> $LOG_DIR/variants_last_gwas_diabetes.err
+```
+
+## 9. Check the results
+
+```bash
+ls -lh $OUT_DIR
+
+# Errors or warnings of any run
+grep -iE "error|warning" $LOG_DIR/*.err | grep -v "_download.err"
+
+# Region distribution of one result (column 6 = Func_refGene)
+cut -f6 $OUT_DIR/novo.hg38_multianno.txt | sort | uniq -c | sort -rn
 ```
 
 ---
 
 ### Notes
 
-- **Commented-out downloads (step 3):** as in the original notebook, only InterVar is active. Uncomment the others (`exac03`, `avsnp150`, `dbnsfp30a`, `clinvar_20221231`, `gnomad211_exome`, `revel`) to download them for hg38 — steps 10 and 12 use all of them.
-- **`dbnsfp31a_interpro` (step 9)** has no download step, also in the original. To download it: `perl /home/kaira/Desktop/annovar/annovar/annotate_variation.pl -buildver hg38 -downdb -webfrom annovar dbnsfp31a_interpro humandb/`
-- **`humandb` path:** step 8 uses `/home/kaira/Desktop/annovar/humandb` while the others use the relative `humandb/`, as in the original. Run everything from `/home/kaira/Desktop/annovar/` so both point to the same folder.
-- **Input file names** (`variantes.txt`, `novo.txt`, `variants_estrelas.txt`, `variantes.vcf`) were kept as-is because they refer to existing files; rename them on disk if you want English names there too.
-- **Output files:** ANNOVAR names outputs by build (`*.hg38_multianno.txt`), so they will not overwrite the previous hg19 results.
+- **`-vcfinput`** is used only in step 8 (`variantes.vcf`). The `.txt` inputs are in ANNOVAR avinput format; using `-vcfinput` on them fails with `invalid record found in VCF4 file (at least 8 tab-delimited fields expected)`. If step 3 shows that a `.txt` file is actually a VCF, add `-vcfinput` to its command.
+- **`WRONG reference alleles` warning:** the input coordinates are not hg38. Check the build of the file before interpreting results.
+- **Logs:** ANNOVAR writes its progress messages (`NOTICE`) to stderr, so read the `.err` files.
+- **Output files:** named `<prefix>.hg38_multianno.txt` in `$OUT_DIR`, so they do not overwrite the previous hg19 results.
+- **Redundant databases:** steps 6 and 8 keep both ClinVar versions (2014 and 2022) and both dbNSFP versions (3.0a and 4.2a), as in the original notebook. REVEL is already included in `dbnsfp42a`.
