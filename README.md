@@ -91,7 +91,7 @@ less $DB_HG38/hg38_avdblist.txt
 
 ## 5. Input file
 
-This repository provides an example VCF, [`variants.vcf`](variants.vcf), with nine well-known variants in hg38 coordinates (type 2 diabetes GWAS hits, *APOE* ε4/ε2, *HFE* C282Y, *MTHFR* C677T). Copy it into the input folder, or replace it with your own hg38 VCF to annotate real data.
+This repository provides an example VCF, [`variants.vcf`](variants.vcf), with nine well-known variants in hg38 coordinates. Copy it into the input folder, or replace it with your own hg38 VCF to annotate real data.
 
 ```bash
 cp /path/to/this/repository/variants.vcf $IN_DIR/
