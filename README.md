@@ -77,7 +77,7 @@ for f in variantes.txt novo.txt variants_estrelas.txt variantes.vcf; do
     echo "== $f"; grep -v '^#' $BASE_DIR/$f | head -n 1
 done
 ```
-## 8. Annotation — `variantes.vcf` 
+## 4. Annotation — `variantes.vcf` 
 
 ```bash
 perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variants.vcf $DB_HG38/ \
@@ -91,7 +91,7 @@ perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variants.vcf $DB_HG38/ \
     -vcfinput \
     1> $LOG_DIR/variants_last_gwas_diabetes.log 2> $LOG_DIR/variants_last_gwas_diabetes.err
 ```
-### Convert file .vcf to .txt format
+### Extra: Convert file .vcf to .txt format
 ```
 cd /home/users/kcptomaz/ANNOVAR
 
@@ -102,7 +102,7 @@ perl $ANNOVAR_DIR/convert2annovar.pl -format vcf4old $BASE_DIR/variantes.vcf \
 cat $BASE_DIR/variants.txt
 ```
 
-##  Annotation — `variants.txt` (all databases)
+## 4. Annotation — `variants.txt`
 
 ```bash
 perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variants.txt $DB_HG38/ \
