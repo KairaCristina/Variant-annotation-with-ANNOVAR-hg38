@@ -127,6 +127,18 @@ perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/novo.txt $DB_HG38/ \
     --dot2underline \
     1> $LOG_DIR/novo.log 2> $LOG_DIR/novo.err
 ```
+```
+perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variants.txt $DB_HG38/ \
+    -buildver hg38 \
+    -out $OUT_DIR/novo \
+    -remove \
+    -protocol refGene,clinvar_20240917,dbnsfp42a,dbnsfp31a_interpro,exac03,avsnp151,gnomad211_exome,gnomad40_genome,intervar_20180118 \
+    -operation g,f,f,f,f,f,f,f,f \
+    -nastring . \
+    --dot2underline \
+    1> $LOG_DIR/novo.log 2> $LOG_DIR/novo.err
+```
+
 
 ## 9. Check the results
 
