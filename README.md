@@ -77,21 +77,6 @@ for f in variantes.txt novo.txt variants_estrelas.txt variantes.vcf; do
     echo "== $f"; grep -v '^#' $BASE_DIR/$f | head -n 1
 done
 ```
-
-##  Annotation — `novo.txt` (all databases)
-
-```bash
-perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/novo.txt $DB_HG38/ \
-    -buildver hg38 \
-    -out $OUT_DIR/novo \
-    -remove \
-    -protocol refGene,clinvar_20140702,dbnsfp42a,exac03,avsnp150,dbnsfp30a,clinvar_20221231,gnomad211_exome,intervar_20180118,revel,gnomad_genome \
-    -operation g,f,f,f,f,f,f,f,f,f,f \
-    -nastring . \
-    --dot2underline \
-    1> $LOG_DIR/novo.log 2> $LOG_DIR/novo.err
-```
-
 ## 8. Annotation — `variantes.vcf` 
 
 ```bash
@@ -117,6 +102,30 @@ perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/variantes.vcf $DB_HG38/ \
     --dot2underline \
     -vcfinput \
     1> $LOG_DIR/variants_example.log 2> $LOG_DIR/variants_example.err
+```
+### Convert file .vcf to .txt format
+```
+cd /home/users/kcptomaz/ANNOVAR
+
+perl $ANNOVAR_DIR/convert2annovar.pl -format vcf4old $BASE_DIR/variantes.vcf \
+    -outfile $BASE_DIR/variants.txt \
+    2> $LOG_DIR/convert_variants.err
+
+cat $BASE_DIR/variants.txt
+```
+
+##  Annotation — `novo.txt` (all databases)
+
+```bash
+perl $ANNOVAR_DIR/table_annovar.pl $BASE_DIR/novo.txt $DB_HG38/ \
+    -buildver hg38 \
+    -out $OUT_DIR/novo \
+    -remove \
+    -protocol refGene,clinvar_20140702,dbnsfp42a,exac03,avsnp150,dbnsfp30a,clinvar_20221231,gnomad211_exome,intervar_20180118,revel,gnomad_genome \
+    -operation g,f,f,f,f,f,f,f,f,f,f \
+    -nastring . \
+    --dot2underline \
+    1> $LOG_DIR/novo.log 2> $LOG_DIR/novo.err
 ```
 
 ## 9. Check the results
