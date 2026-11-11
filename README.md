@@ -31,12 +31,12 @@ gunzip --version | head -n 1
 Run this block in every new terminal session. All later commands use these variables, so they work from any folder.
 
 ```bash
-BASE_DIR=/home/users/kcptomaz/ANNOVAR         # working folder (change to your own path)
+BASE_DIR=/path/to/your/ANNOVAR                # working folder (CHANGE to your own path)
 ANNOVAR_DIR=$BASE_DIR/annovar                 # ANNOVAR scripts (created in step 3)
 DB_HG38=$BASE_DIR/humandb_hg38                # hg38 databases (downloaded in step 4)
-IN_DIR=$BASE_DIR/input
-OUT_DIR=$BASE_DIR/output_hg38
-LOG_DIR=$BASE_DIR/logs
+IN_DIR=$BASE_DIR/input                        # input files (VCF / avinput)
+OUT_DIR=$BASE_DIR/output_hg38                 # annotation results
+LOG_DIR=$BASE_DIR/logs                        # log files
 
 mkdir -p $BASE_DIR $DB_HG38 $IN_DIR $OUT_DIR $LOG_DIR
 cd $BASE_DIR
