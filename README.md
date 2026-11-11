@@ -21,13 +21,12 @@ conda create -n annovar_hg38 -c conda-forge -c bioconda --strict-channel-priorit
 conda activate annovar_hg38
 
 ```
-
 ## 2. Set the paths once
 
 Run this block in every new terminal session. All later commands use these variables, so they work from any folder.
 
 ```bash
-BASE_DIR=/path/to/your/ANNOVAR                # working folder (CHANGE to your own path)
+BASE_DIR=path/to/your/ANNOVAR                 # working folder
 ANNOVAR_DIR=$BASE_DIR/annovar                 # ANNOVAR scripts (created in step 3)
 DB_HG38=$BASE_DIR/humandb_hg38                # hg38 databases (downloaded in step 4)
 IN_DIR=$BASE_DIR/input                        # input files (VCF / avinput)
@@ -36,6 +35,10 @@ LOG_DIR=$BASE_DIR/logs                        # log files
 
 mkdir -p $BASE_DIR $DB_HG38 $IN_DIR $OUT_DIR $LOG_DIR
 cd $BASE_DIR
+```
+###
+```
+mv annovar.latest.tar.gz $BASE_DIR
 ```
 
 > Every command below uses **absolute paths** through these variables. Mixing absolute and relative `humandb` paths is the usual cause of `database file does not exist` errors.
